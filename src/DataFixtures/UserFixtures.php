@@ -30,27 +30,32 @@ class UserFixtures extends Fixture
                 'name' => 'Super Admin',
                 'email' => 'superadmin@yopmail.com',
                 'role' => 'super_admin',
+                'status' => 'active',
             ],
             [
                 'name' => 'Admin',
                 'email' => 'admin@yopmail.com',
                 'role' => 'admin',
+                'status' => 'active',
             ],
             [
                 'name' => 'Editor',
                 'email' => 'editor@yopmail.com',
                 'role' => 'editor',
+                'status' => 'active',
             ],
         ];
 
         foreach ($users as $data) {
-            $this->createUser($manager, $now, $data['name'], $data['email'], $data['role']);
+            $this->createUser($manager, $now, $data['name'], $data['email'], $data['role'], null, $data['status']);
         }
 
         for ($i = 1; $i <= 20; $i++) {
             $name = $faker->name();
             $email = $faker->unique()->safeEmail();
-            $this->createUser($manager, $now, $name, $email, 'editor', $faker->phoneNumber());
+            $role = $faker->randomElement(['admin', 'editor']);
+            $status = $faker->randomElement(['active', 'inactive']);
+            $this->createUser($manager, $now, $name, $email, $role, $faker->phoneNumber(), $status);
         }
 
         $manager->flush();
@@ -62,7 +67,8 @@ class UserFixtures extends Fixture
         string $name,
         string $email,
         string $role,
-        ?string $phone = null
+        ?string $phone = null,
+        string $status = 'active'
     ): void {
         if ($this->users->findOneByEmail($email)) {
             return;
@@ -73,7 +79,7 @@ class UserFixtures extends Fixture
         $user->setName($name);
         $user->setEmail($email);
         $user->setPhone($phone);
-        $user->setStatus('active');
+        $user->setStatus($status);
         $user->setRole($role);
         $user->setPassword($this->passwordHasher->hashPassword($user, 'Password@123'));
         $user->setLastLoginAt(null);
