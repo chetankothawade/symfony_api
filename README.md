@@ -171,6 +171,104 @@ Content-Type: application/json
 }
 ```
 
+## Testing
+
+This project includes comprehensive unit and integration tests using PHPUnit.
+
+### Test Structure
+
+**Integration Tests** (`tests/Integration/`)
+- `AuthControllerTest.php` - Tests for authentication endpoints
+- `UserControllerTest.php` - Tests for user management endpoints
+
+**Unit Tests** (`tests/Unit/Service/`)
+- `AuthServiceTest.php` - Tests for authentication business logic
+- `UserServiceTest.php` - Tests for user management business logic
+
+### Test Configuration
+
+Tests use a separate MySQL database (`symfony_api_test`) configured in `.env.test`:
+
+```
+APP_ENV=test
+APP_SECRET=test
+DATABASE_URL="mysql://root:@127.0.0.1:3306/symfony_api_test?serverVersion=8.0&charset=utf8mb4"
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+php bin/phpunit
+
+# Run only Integration tests
+php bin/phpunit --testsuite Integration
+
+# Run only Unit tests
+php bin/phpunit --testsuite Unit
+
+# Run with code coverage
+php bin/phpunit --coverage-html coverage/
+
+# Run specific test class
+php bin/phpunit tests/Integration/AuthControllerTest.php
+
+# Run specific test method
+php bin/phpunit --filter testLoginSuccess
+```
+
+### Test Database Setup
+
+The test database is automatically initialized when tests run. The first test execution will:
+1. Create the database schema using Doctrine migrations
+2. Reset the schema for each test to ensure isolation
+
+To manually prepare the test database:
+
+```bash
+# Create test database
+php bin/console doctrine:database:create --env=test
+
+# Run migrations
+php bin/console doctrine:migrations:migrate --env=test
+```
+
+### Test Coverage
+
+**Integration Tests (5 tests - 15 assertions)**
+- Login with valid credentials
+- Login with invalid password (401)
+- Login with inactive user (403)
+- List users with pagination
+- Create, read, update, delete user + toggle status
+
+**Unit Tests (18 tests - 65 assertions)**
+- AuthService: Login, registration, password reset validation
+- UserService: CRUD operations, status toggling, UUID lookup
+
+### Test Data
+
+Tests automatically create temporary test data:
+- Default password for fixtures: `Password@123`
+- Test users are created with roles: `admin`, `editor`, `super_admin`
+
+### Debugging Tests
+
+Enable verbose output:
+```bash
+php bin/phpunit --debug
+```
+
+Run with PSR-3 logging:
+```bash
+php bin/phpunit --log-junit junit.xml
+```
+
+Generate HTML report:
+```bash
+php bin/phpunit --coverage-html coverage/
+```
+
 ## Useful Commands
 
 Clear cache:
@@ -193,8 +291,14 @@ Run migrations status:
 php bin/console doctrine:migrations:status
 ```
 
+Create a new migration:
+```
+php bin/console make:migration
+```
+
 ## Notes
 
 - `forgot-password` returns the token in the response for testing. Remove it in production.
 - `logout` only records `last_logout_at`. JWT tokens remain valid until they expire.
-# symfony_api
+- Tests use a separate test database to avoid affecting production data.
+- The `.env.test` file is used automatically when running tests.
