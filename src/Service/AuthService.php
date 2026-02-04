@@ -24,6 +24,7 @@ class AuthService
         private JWTTokenManagerInterface $jwt,
         private EntityManagerInterface $em,
         private MailerInterface $mailer,
+        private CommonService $common,
         #[Autowire('%env(string:FRONTEND_RESET_URL)%')]
         private string $frontendResetUrl,
         #[Autowire('%env(string:MAILER_FROM)%')]
@@ -71,7 +72,7 @@ class AuthService
         $now = new \DateTimeImmutable('now');
 
         $user = new User();
-        $user->setUuid($this->generateUuidV4());
+        $user->setUuid($this->common->generateUuidV4());
         $user->setName($name);
         $user->setEmail($email);
         $user->setPhone($phone);
@@ -154,12 +155,4 @@ class AuthService
         return true;
     }
 
-    private function generateUuidV4(): string
-    {
-        $data = random_bytes(16);
-        $data[6] = chr((ord($data[6]) & 0x0f) | 0x40);
-        $data[8] = chr((ord($data[8]) & 0x3f) | 0x80);
-
-        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
-    }
 }
