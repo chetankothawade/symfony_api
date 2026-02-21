@@ -1,6 +1,6 @@
 # Symfony API Setup
 
-This project is a Symfony 7.4 API with JWT auth, custom login/signup, and password reset.
+This project is a Symfony 7.4 API with JWT auth, user management, module management, and RBAC (role/module/permission) support.
 
 ## Requirements
 
@@ -27,11 +27,11 @@ Dev:
 ## Install Symfony CLI (optional but recommended)
 
 Windows:
-```
+```bash
 scoop install symfony-cli
 ```
 or
-```
+```bash
 choco install symfony-cli
 ```
 
@@ -39,7 +39,7 @@ choco install symfony-cli
 
 Update `.env` (or better, `.env.local`):
 
-```
+```env
 APP_ENV=dev
 APP_SECRET=your_secret
 
@@ -57,7 +57,7 @@ FRONTEND_RESET_URL=http://localhost/reset-password
 
 ## Install
 
-```
+```bash
 composer install
 ```
 
@@ -65,131 +65,177 @@ composer install
 
 Generate JWT keys:
 
-```
+```bash
 php bin/console lexik:jwt:generate-keypair
 ```
 
 ## Database
 
-Create DB schema and run migrations:
+Create DB and run migrations:
 
-```
+```bash
 php bin/console doctrine:database:create
-php bin/console make:migration
 php bin/console doctrine:migrations:migrate
+```
+
+### Important Migration Note
+
+RBAC migration (`Version20260221091500`) creates a foreign key to `users.id`, so `users` must use `InnoDB`.
+
+For fresh databases, this is already handled by migrations.  
+If you have an older DB where `users` is `MyISAM`, run:
+
+```bash
+php bin/console doctrine:query:sql "ALTER TABLE users ENGINE=InnoDB"
 ```
 
 ## Seed Users
 
-Run fixtures (creates 1 user each: `super_admin`, `admin`, `editor`):
+Run fixtures (creates users for roles: `super_admin`, `admin`, `editor`):
 
-```
+```bash
 php bin/console doctrine:fixtures:load
 ```
 
-Seed users (default password):
+Default seeded password:
 
-```
+```text
 Password@123
 ```
 
 ## Run Server
 
 Using Symfony CLI:
-```
+```bash
 symfony serve --port=8020
 ```
 
-Or:
-```
+or:
+```bash
 symfony server:start
 ```
 
-Or:
-
-```
+or:
+```bash
 php -S 127.0.0.1:8000 -t public
 ```
 
 ## API Endpoints
 
-### Login
+All `/api/*` endpoints except login/signup/forgot-password/reset-password require:
 
-```
-POST /api/login
-Content-Type: application/json
-
-{
-  "email": "admin@example.com",
-  "password": "Password@123"
-}
-```
-
-### Signup
-
-```
-POST /api/signup
-Content-Type: application/json
-
-{
-  "name": "Test User",
-  "email": "test@example.com",
-  "password": "Password@123",
-  "phone": "9999999999"
-}
-```
-
-### Logout
-
-```
-POST /api/logout
+```http
 Authorization: Bearer <TOKEN>
 ```
 
-### Forgot Password
+### Auth
 
-```
+```http
+POST /api/login
+POST /api/signup
+POST /api/logout
 POST /api/forgot-password
-Content-Type: application/json
-
-{
-  "email": "admin@example.com"
-}
-```
-
-### Reset Password
-
-```
 POST /api/reset-password
-Content-Type: application/json
+```
 
+### Users
+
+```http
+GET    /api/users?page=1&perPage=10&search=&sortedField=id&sortedBy=asc
+POST   /api/users
+GET    /api/users/{uuid}
+PATCH  /api/users/{uuid}
+DELETE /api/users/{uuid}
+PATCH  /api/users/{uuid}/toggle-status
+```
+
+### Modules
+
+```http
+GET    /api/module?page=1&perPage=10&search=&status=&sortedField=id&sortedBy=desc
+POST   /api/module
+GET    /api/module/getList
+GET    /api/module/{uuid}
+GET    /api/module/{uuid}/edit
+PATCH  /api/module/{uuid}
+DELETE /api/module/{uuid}
+PATCH  /api/module/{uuid}/active
+```
+
+Example module create payload:
+
+```json
 {
-  "email": "admin@example.com",
-  "token": "<TOKEN_FROM_EMAIL>",
-  "password": "NewPass123",
-  "password_confirmation": "NewPass123"
+  "name": "User Management",
+  "url": "/users",
+  "icon": "users",
+  "seq_no": 1,
+  "is_sub_module": "N",
+  "status": "active",
+  "is_permission": "Y"
 }
 ```
+
+### RBAC - User Permissions
+
+```http
+POST /api/user-permissions/toggle
+GET  /api/user-permissions/getAll/{uuid}
+GET  /api/user-permissions/access/{uuid}
+GET  /api/user-permissions/sidebar-menu
+```
+
+Toggle payload:
+
+```json
+{
+  "userUuid": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "modulePermissionId": 1,
+  "isChecked": true
+}
+```
+
+## Postman
+
+Collection file:
+
+```text
+postman_collection.json
+```
+
+Included folders:
+- `Auth`
+- `Users`
+- `Modules`
+- `RBAC - User Permissions`
+
+Collection variables:
+- `base_url`
+- `token`
+- `user_uuid`
+- `target_user_uuid`
+- `module_uuid`
+- `module_permission_id`
 
 ## Testing
 
-This project includes comprehensive unit and integration tests using PHPUnit.
+This project includes unit and integration tests using PHPUnit.
 
 ### Test Structure
 
-**Integration Tests** (`tests/Integration/`)
-- `AuthControllerTest.php` - Tests for authentication endpoints
-- `UserControllerTest.php` - Tests for user management endpoints
+Integration tests (`tests/Integration/`):
+- `AuthControllerTest.php`
+- `UserControllerTest.php`
 
-**Unit Tests** (`tests/Unit/Service/`)
-- `AuthServiceTest.php` - Tests for authentication business logic
-- `UserServiceTest.php` - Tests for user management business logic
+Unit tests (`tests/Unit/Service/`):
+- `AuthServiceTest.php`
+- `UserServiceTest.php`
 
 ### Test Configuration
 
 Tests use a separate MySQL database (`symfony_api_test`) configured in `.env.test`:
 
-```
+```env
 APP_ENV=test
 APP_SECRET=test
 DATABASE_URL="mysql://root:@127.0.0.1:3306/symfony_api_test?serverVersion=8.0&charset=utf8mb4"
@@ -198,107 +244,36 @@ DATABASE_URL="mysql://root:@127.0.0.1:3306/symfony_api_test?serverVersion=8.0&ch
 ### Running Tests
 
 ```bash
-# Run all tests
 php bin/phpunit
-
-# Run only Integration tests
 php bin/phpunit --testsuite Integration
-
-# Run only Unit tests
 php bin/phpunit --testsuite Unit
-
-# Run with code coverage
-php bin/phpunit --coverage-html coverage/
-
-# Run specific test class
 php bin/phpunit tests/Integration/AuthControllerTest.php
-
-# Run specific test method
 php bin/phpunit --filter testLoginSuccess
 ```
 
 ### Test Database Setup
 
-The test database is automatically initialized when tests run. The first test execution will:
-1. Create the database schema using Doctrine migrations
-2. Reset the schema for each test to ensure isolation
-
-To manually prepare the test database:
+The test DB is initialized/reset during tests.  
+Manual setup:
 
 ```bash
-# Create test database
 php bin/console doctrine:database:create --env=test
-
-# Run migrations
 php bin/console doctrine:migrations:migrate --env=test
-```
-
-### Test Coverage
-
-**Integration Tests (5 tests - 15 assertions)**
-- Login with valid credentials
-- Login with invalid password (401)
-- Login with inactive user (403)
-- List users with pagination
-- Create, read, update, delete user + toggle status
-
-**Unit Tests (18 tests - 65 assertions)**
-- AuthService: Login, registration, password reset validation
-- UserService: CRUD operations, status toggling, UUID lookup
-
-### Test Data
-
-Tests automatically create temporary test data:
-- Default password for fixtures: `Password@123`
-- Test users are created with roles: `admin`, `editor`, `super_admin`
-
-### Debugging Tests
-
-Enable verbose output:
-```bash
-php bin/phpunit --debug
-```
-
-Run with PSR-3 logging:
-```bash
-php bin/phpunit --log-junit junit.xml
-```
-
-Generate HTML report:
-```bash
-php bin/phpunit --coverage-html coverage/
 ```
 
 ## Useful Commands
 
-Clear cache:
-```
+```bash
 php bin/console cache:clear
-```
-
-List routes:
-```
 php bin/console debug:router
-```
-
-Validate Doctrine schema:
-```
 php bin/console doctrine:schema:validate
-```
-
-Run migrations status:
-```
 php bin/console doctrine:migrations:status
-```
-
-Create a new migration:
-```
 php bin/console make:migration
 ```
 
 ## Notes
 
-- `forgot-password` returns the token in the response for testing. Remove it in production.
-- `logout` only records `last_logout_at`. JWT tokens remain valid until they expire.
-- Tests use a separate test database to avoid affecting production data.
-- The `.env.test` file is used automatically when running tests.
+- `forgot-password` returns reset token in response for testing; remove in production.
+- `logout` records `last_logout_at`; JWT remains valid until expiry.
+- Tests use a separate test DB (`.env.test`).
+- RBAC tables: `modules`, `permissions`, `module_permissions`, `role_modules`, `user_permissions`.
