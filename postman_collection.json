@@ -7,7 +7,10 @@
   "variable": [
     { "key": "base_url", "value": "http://localhost" },
     { "key": "token", "value": "" },
-    { "key": "user_uuid", "value": "" }
+    { "key": "user_uuid", "value": "" },
+    { "key": "target_user_uuid", "value": "" },
+    { "key": "module_uuid", "value": "" },
+    { "key": "module_permission_id", "value": "1" }
   ],
   "item": [
     {
@@ -194,6 +197,207 @@
               "raw": "{{base_url}}/api/users/{{user_uuid}}/toggle-status",
               "host": ["{{base_url}}"],
               "path": ["api", "users", "{{user_uuid}}", "toggle-status"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Modules",
+      "item": [
+        {
+          "name": "List Modules (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/module?page=1&perPage=10&search=&status=&sortedField=id&sortedBy=desc",
+              "host": ["{{base_url}}"],
+              "path": ["api", "module"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "perPage", "value": "10" },
+                { "key": "search", "value": "" },
+                { "key": "status", "value": "" },
+                { "key": "sortedField", "value": "id" },
+                { "key": "sortedBy", "value": "desc" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Module",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"User Management\",\n  \"url\": \"/users\",\n  \"icon\": \"users\",\n  \"seq_no\": 1,\n  \"is_sub_module\": \"N\",\n  \"status\": \"active\",\n  \"is_permission\": \"Y\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/module",
+              "host": ["{{base_url}}"],
+              "path": ["api", "module"]
+            }
+          }
+        },
+        {
+          "name": "Get Parent Module List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/module/getList",
+              "host": ["{{base_url}}"],
+              "path": ["api", "module", "getList"]
+            }
+          }
+        },
+        {
+          "name": "Show Module",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/module/{{module_uuid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "module", "{{module_uuid}}"]
+            }
+          }
+        },
+        {
+          "name": "Edit Module",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/module/{{module_uuid}}/edit",
+              "host": ["{{base_url}}"],
+              "path": ["api", "module", "{{module_uuid}}", "edit"]
+            }
+          }
+        },
+        {
+          "name": "Update Module (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"User Management Updated\",\n  \"url\": \"/users\",\n  \"icon\": \"users\",\n  \"seq_no\": 2,\n  \"status\": \"active\",\n  \"is_permission\": \"Y\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/module/{{module_uuid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "module", "{{module_uuid}}"]
+            }
+          }
+        },
+        {
+          "name": "Toggle Module Active/Inactive",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/module/{{module_uuid}}/active",
+              "host": ["{{base_url}}"],
+              "path": ["api", "module", "{{module_uuid}}", "active"]
+            }
+          }
+        },
+        {
+          "name": "Delete Module",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/module/{{module_uuid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "module", "{{module_uuid}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "RBAC - User Permissions",
+      "item": [
+        {
+          "name": "Toggle User Permission",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userUuid\": \"{{target_user_uuid}}\",\n  \"modulePermissionId\": {{module_permission_id}},\n  \"isChecked\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/user-permissions/toggle",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user-permissions", "toggle"]
+            }
+          }
+        },
+        {
+          "name": "Get User Permission Matrix",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/user-permissions/getAll/{{target_user_uuid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user-permissions", "getAll", "{{target_user_uuid}}"]
+            }
+          }
+        },
+        {
+          "name": "Get User Module Access",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/user-permissions/access/{{target_user_uuid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user-permissions", "access", "{{target_user_uuid}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Sidebar Menu (Logged In User)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/user-permissions/sidebar-menu",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user-permissions", "sidebar-menu"]
             }
           }
         }
